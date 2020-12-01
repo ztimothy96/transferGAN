@@ -24,14 +24,18 @@ def load_weights(model, weight_dict):
                 pointer = getattr(pointer, 'weight')
             elif l[0] == 'Biases' or l[0] == 'b':
                 pointer = getattr(pointer, 'bias')
-            '''
+            
             #to test
             elif l[0] == 'scale':
                 pointer = getattr(pointer, 'weight')
             elif l[0] == 'offset':
                 pointer = getattr(pointer, 'bias')
+            elif l[0] == 'moving_mean':
+                pointer = getattr(pointer, 'running_mean')
+            elif l[0] == 'moving_variance':
+                pointer = getattr(pointer, 'running_var')
             #end of test
-            '''
+            
             else:
                 pointer = getattr(pointer, l[0])
 
@@ -54,12 +58,6 @@ def load_weights(model, weight_dict):
             e.args += (pointer.shape, array.shape)
             raise
         pointer.data = torch.from_numpy(array)
-
-
-def save_images(images, save_path):
-    n_samples = images.shape[0]
-    
-    pass
 
 
 def save_weights(model, save_path):

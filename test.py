@@ -8,6 +8,7 @@ import utils
 import torch.optim as optim
 import loader
 from torch.utils.data import DataLoader
+from torchvision.utils import save_image
 
 print('imported all libraries')
 
@@ -59,11 +60,9 @@ for name, shape in init_vars:
 utils.load_weights(generator, vars_g)
 print('loaded weights')
 
-# setup optimizers
-gen_train_op = optim.Adam(generator.parameters(), lr=LR_G, betas=(BETA1_G, 0.9)) #what is colocate_gradients_with_ops
-fixed_noise = torch.randn((N_SAMPLES, 128), dtype=torch.float32)
-
-fake_data = generator(BATCH_SIZE//len(DEVICES))
+samples = generator(N_SAMPLES)
+samples = (samples+1.0)/2
+samples = samples.view((N_SAMPLES, 3, N_PIXELS, N_PIXELS))
 print('generated image')
-
+save_image(samples, SAMPLES_DIR + 'test_samples.png')
 

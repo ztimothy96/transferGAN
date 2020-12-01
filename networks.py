@@ -6,46 +6,6 @@ import math
 # note to self: ignoring he initialization throughout, since pre-training.
 # https://blog.paperspace.com/pytorch-101-advanced/
 
-class Layernorm(nn.Module):
-    # from https://github.com/pytorch/pytorch/issues/1959
-    def __init__(self, num_features, eps=1e-5, affine=True):
-        super(Layernorm, self).__init__()
-        self.num_features = num_features # number of channels, in this case
-        self.affine = affine
-        self.eps = eps
-
-        if self.affine:
-            self.scale = nn.Parameter(torch.ones(num_features))
-            self.offset = nn.Parameter(torch.zeros(num_features))
-
-    def forward(self, x):
-        shape = (-1, 1, 1)
-        axes = (0, 2, 3) # TF code says (1, 2, 3), but dimension mismatch
-        scale= self.scale.view(shape)
-        offset = self.scale.view(shape)
-        
-        mean = x.mean(axes).view(shape)
-        std = x.std(axes).view(shape)
-        y = (x - mean) / (std + self.eps)
-
-        if self.affine:
-            y = scale * y + offset
-        return y
-    
-
-class Batchnorm(nn.Module):
-    def __init__(self, n_features, update_moving_stats=True):
-        super(Batchnorm, self).__init__()
-        self.offset = torch.zeros(n_features) # weights are loaded correctly
-        self.scale = torch.ones(n_features)
-        self.moving_mean = torch.zeros(n_features) # these two aren't pretrained
-        self.moving_variance = torch.ones(n_features)
-
-    def forward(self, x):
-        # specify axes?
-        return nn.functional.batch_norm(x, self.scale, self.offset, eps=1e-5)
-
-
 class ConvMeanPool(nn.Conv2d):
     def __init__(self, input_dim, output_dim, filter_size, bias=True, padding=0):
         super(ConvMeanPool, self).__init__(
@@ -110,26 +70,14 @@ class ResBlock(nn.Module):
         if bn:
             if norm=='batch':
                 self.BN = nn.ModuleList([
-                    Batchnorm(input_dim),
-                    Batchnorm(output_dim)])
-                '''
-                #to test
-                self.BN = nn.ModuleList([
                     nn.BatchNorm2d(input_dim),
                     nn.BatchNorm2d(output_dim)])
-                #end of test
-                '''
+
             elif norm=='layer':
-                self.BN = nn.ModuleList([
-                    Layernorm(input_dim),
-                    Layernorm(input_dim)])
-                '''
-                #to test
                 self.BN = nn.ModuleList([
                     nn.LayerNorm(input_dim),
                     nn.LayerNorm(input_dim)])
-                #end of test
-                '''
+
             else:
                 raise Exception('invalid normalization value')
         else:
@@ -141,23 +89,15 @@ class ResBlock(nn.Module):
             shortcut = x
         else:
             shortcut = self.Shortcut(x)
-        print('shortcut')
-        print(shortcut) # looks normal
  
         if self.BN:
             x = self.BN[0](x)
-            print('batchnorm')
-            print(x) # NaN everywhere
+            
         x = F.relu(x)
-
         x = self.Conv[0](x)
-        print('conv')
-        print(x)
         
         if self.BN:
             x =self.BN[1](x)
-            print('batchnorm')
-            print(x)
 
         x = F.relu(x)
         x = self.Conv[1](x)
@@ -181,7 +121,7 @@ class Generator(nn.Module):
                                   ResBlock(2*dim, 1*dim, 3,
                                            resample='up', bn=bn, norm='batch')])
         if bn:
-            self.OutputN = Batchnorm(1*dim)
+            self.OutputN = nn.BatchNorm2d(1* dim)
         else:
             self.register_parameter('OutputN', None)
         self.Output = nn.Conv2d(1*dim, 3, 3, padding=1)
