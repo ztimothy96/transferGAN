@@ -18,7 +18,7 @@ print('imported all libraries')
 # path parameters
 DATA_DIR = 'data0/lsun/bedroom/0/0/'
 SAVE_DIR = 'weights/tuned/lsun/'
-CKPT = 'transfer_model/unconditional/bedroom/wgan-gp.model'
+CKPT = 'transfer_model/unconditional/imagenet/wgan-gp.model'
 SAMPLES_DIR = 'samples/'
 
 # model parameters
@@ -57,6 +57,7 @@ for name, shape in init_vars:
     if name.startswith('Generator'):
         vars_g.append((name, array))
 
+print([item[0] for item in vars_g])
 utils.load_weights(generator, vars_g)
 print('loaded weights')
 

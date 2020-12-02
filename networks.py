@@ -121,7 +121,7 @@ class Generator(nn.Module):
                                   ResBlock(2*dim, 1*dim, 3,
                                            resample='up', bn=bn, norm='batch')])
         if bn:
-            self.OutputN = nn.BatchNorm2d(1* dim)
+            self.OutputN = nn.BatchNorm2d(1*dim)
         else:
             self.register_parameter('OutputN', None)
         self.Output = nn.Conv2d(1*dim, 3, 3, padding=1)
@@ -136,7 +136,6 @@ class Generator(nn.Module):
         x = self.Input(noise)
         x = x.view(-1, 8*self.dim, fact, fact)
 
-        # fine up to here
         for block in self.Res:
             x = block(x)
             

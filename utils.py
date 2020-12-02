@@ -7,6 +7,8 @@ def load_weights(model, weight_dict):
     for name, array in weight_dict:
         name = name.split('/')[-1]
         name = name.split('.')
+        if name[0] in ['Adam', 'Adam_1'] :
+            continue 
         pointer = model
         transpose_axes = None
 
@@ -25,7 +27,6 @@ def load_weights(model, weight_dict):
             elif l[0] == 'Biases' or l[0] == 'b':
                 pointer = getattr(pointer, 'bias')
             
-            #to test
             elif l[0] == 'scale':
                 pointer = getattr(pointer, 'weight')
             elif l[0] == 'offset':
@@ -34,7 +35,6 @@ def load_weights(model, weight_dict):
                 pointer = getattr(pointer, 'running_mean')
             elif l[0] == 'moving_variance':
                 pointer = getattr(pointer, 'running_var')
-            #end of test
             
             else:
                 pointer = getattr(pointer, l[0])
