@@ -9,7 +9,7 @@ import math
 class ConvMeanPool(nn.Conv2d):
     def __init__(self, input_dim, output_dim, filter_size, bias=True, padding=0):
         super(ConvMeanPool, self).__init__(
-            input_dim, output_dim, filter_size, bias, padding=padding)
+            input_dim, output_dim, filter_size, bias=bias, padding=padding)
 
     def forward(self, x):
         x = super().forward(x)
@@ -20,7 +20,7 @@ class ConvMeanPool(nn.Conv2d):
 class MeanPoolConv(nn.Conv2d):
     def __init__(self, input_dim, output_dim, filter_size, bias=True, padding=0):
         super(MeanPoolConv, self).__init__(
-            input_dim, output_dim, filter_size, bias, padding=padding)
+            input_dim, output_dim, filter_size, bias=bias, padding=padding)
 
     def forward(self, x):
         x = output = (x[:,:,::2,::2] + x[:,:,1::2,::2] + x[:,:,::2,1::2] + x[:,:,1::2,1::2])/ 4.
@@ -31,7 +31,7 @@ class MeanPoolConv(nn.Conv2d):
 class UpsampleConv(nn.Conv2d):
     def __init__(self, input_dim, output_dim, filter_size, bias=True, padding=0):
         super(UpsampleConv, self).__init__(
-            input_dim, output_dim, filter_size, bias, padding=padding)
+            input_dim, output_dim, filter_size, bias=bias, padding=padding)
         
     def forward(self, x):
         x = torch.cat((x, x, x, x), 1)
@@ -52,17 +52,17 @@ class ResBlock(nn.Module):
         if resample=='down':
             self.Shortcut = MeanPoolConv(input_dim, output_dim, 1)
             self.Conv = nn.ModuleList(
-                [nn.Conv2d(input_dim, input_dim, filter_size, padding=p),
+                [nn.Conv2d(input_dim, input_dim, filter_size, padding=p, bias=False),
                  ConvMeanPool(input_dim, output_dim, filter_size, padding=p)])
         elif resample=='up':
             self.Shortcut = UpsampleConv(input_dim, output_dim, 1)
             self.Conv = nn.ModuleList(
-                [UpsampleConv(input_dim, output_dim, filter_size, padding=p),
+                [UpsampleConv(input_dim, output_dim, filter_size, padding=p, bias=False),
                  nn.Conv2d(output_dim, output_dim, filter_size, padding=p)])
         elif resample==None:
             self.Shortcut = nn.Conv2d(input_dim, output_dim, 1)
             self.Conv = nn.ModuleList(
-                [nn.Conv2d(input_dim, input_dim, filter_size, padding=p),
+                [nn.Conv2d(input_dim, input_dim, filter_size, padding=p, bias=False),
                  nn.Conv2d(input_dim, output_dim, filter_size, padding=p)])
         else:
             raise Exception('invalid resample value')

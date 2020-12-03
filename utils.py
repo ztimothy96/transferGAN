@@ -47,7 +47,7 @@ def load_weights(model, weight_dict):
 
             # If module list, access the sub-module with the right number
             if len(l) >= 2:
-                num = int(l[1])-1 # indexes start at 0, but names start at 1
+                num = int(l[1])-1 # our torch indexes start at 0, but TF names start at 1
                 pointer = pointer[num]
                 
         if transpose_axes:
