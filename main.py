@@ -7,6 +7,7 @@ import tensorflow as tf
 import utils
 import torch.optim as optim
 import loader
+import training
 from torch.utils.data import DataLoader
 
 print('imported all libraries')
@@ -24,6 +25,7 @@ SAMPLES_DIR = 'samples/'
 N_PIXELS = 64 #length, width of image
 BATCH_SIZE = 16
 DIM = 64 #model dimensionality
+LATENT_DIM = 128
 OUTPUT_DIM = N_PIXELS * N_PIXELS * 3 #number of pixels in each image
 BN_G = True #whether to include batch normalization
 BN_D = True
@@ -50,7 +52,7 @@ dataloader = DataLoader(
 data_iter = iter(dataloader)
 print('loaded dataset')
 
-generator = Generator(DIM, N_PIXELS, BN_G)
+generator = Generator(DIM, LATENT_DIM, N_PIXELS, BN_G)
 critic = Discriminator(DIM, N_PIXELS, BN_D)
 print('initialized model')
 
@@ -148,4 +150,10 @@ for t in range(ITERS):
         utils.save_weights(
             critic, '{}discriminator_{}.pth.tar'.format(SAVE_DIR, iteration))
 
-
+'''
+# alternatively:
+epochs = 200
+trainer = Trainer(generator, discriminator, G_optimizer, D_optimizer,
+                  use_cuda=torch.cuda.is_available())
+trainer.train(data_loader, epochs, save_training_gif=True)
+'''

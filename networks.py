@@ -29,14 +29,14 @@ class MeanPoolConv(nn.Conv2d):
 
 
 class UpsampleConv(nn.Conv2d):
-    def __init__(self, input_dim, output_dim, filter_size, bias=True, padding=0):
+    def __init__(self, input_dim, output_dim, filter_size,
+                 bias=True, padding=0, scale_factor=2, mode='nearest'):
         super(UpsampleConv, self).__init__(
             input_dim, output_dim, filter_size, bias=bias, padding=padding)
+        self.up = nn.Upsample(scale_factor=scale_factor, mode=mode)
         
     def forward(self, x):
-        x = torch.cat((x, x, x, x), 1)
-        #already NCHW
-        x = torch.nn.functional.pixel_shuffle(x, 2)
+        x = self.up(x)
         x = super().forward(x)
         return x
 
@@ -70,7 +70,7 @@ class ResBlock(nn.Module):
         if bn:
             if norm=='batch':
                 self.BN = nn.ModuleList([
-                    nn.BatchNorm2d(input_dim),
+                    nn.BatchNorm2d(input_dim, eps=1e-3, momentum=1.0),
                     nn.BatchNorm2d(output_dim)])
 
             elif norm=='layer':
@@ -89,7 +89,7 @@ class ResBlock(nn.Module):
             shortcut = x
         else:
             shortcut = self.Shortcut(x)
- 
+
         if self.BN:
             x = self.BN[0](x)
             
@@ -105,13 +105,14 @@ class ResBlock(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, dim, n_pixels, bn=True):
+    def __init__(self, dim, latent_dim, n_pixels, bn=True):
         super(Generator, self).__init__()
         self.dim = dim
+        self.latent_dim = latent_dim
         self.n_pixels = n_pixels
         fact = n_pixels // 16
         
-        self.Input = nn.Linear(128, fact*fact*8*dim)
+        self.Input = nn.Linear(latent_dim, fact*fact*8*dim)
         self.Res = nn.ModuleList([ResBlock(8*dim, 8*dim, 3,
                                            resample='up', bn=bn, norm='batch'),
                                   ResBlock(8*dim, 4*dim, 3,
@@ -128,7 +129,7 @@ class Generator(nn.Module):
 
     def forward(self, n_samples, noise=None):
         if noise is None:
-            noise = torch.randn((n_samples, 128))
+            noise = self.sample_latent(n_samples)
 
         ## supports 32x32 images; figure out why magic number 16
         fact = self.n_pixels // 16
@@ -146,7 +147,11 @@ class Generator(nn.Module):
         x = self.Output(x)
         x = torch.tanh(x)
         output_dim = self.n_pixels * self.n_pixels * 3
-        return x.view(-1, output_dim)
+        x = x.view(-1, output_dim)
+        return x
+
+    def sample_latent(self, num_samples):
+        return torch.randn((num_samples, self.latent_dim))
 
 
 class Discriminator(nn.Module):
