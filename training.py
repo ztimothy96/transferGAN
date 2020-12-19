@@ -127,15 +127,10 @@ class Trainer():
             if self.num_steps > self.critic_iterations:
                 print("G: {}".format(self.losses['G'][-1]))
 
-        if i % self.save_every == 0:
-            torch.save(self.G.state_dict(), '{}_iter_{}.pt'.format(self.G.name, i))
-            torch.save(self.D.state_dict(), '{}_iter_{}.pt'.format(self.D.name, i))
-
-    def train(self, data_iter, n_iters, save_training_gif=True):
+    def train(self, data_iter, n_iters, n_samples=64,
+              save_training_gif=True, save_weights_dir='./', samples_dir='./'):
         if save_training_gif:
-            # Fix latents to see how image generation improves during training
-            num_samples = 64
-            fixed_latents = Variable(self.G.sample_latent(num_samples))
+            fixed_latents = Variable(self.G.sample_latent(n_samples))
             if self.use_cuda:
                 fixed_latents = fixed_latents.cuda()
             training_progress_images = []
@@ -144,24 +139,31 @@ class Trainer():
             self._train_iter(data_iter, i)
 
             if save_training_gif and i % self.save_every == 0:
-                img_grid = make_grid(self.G(num_samples, noise=fixed_latents).cpu().data)
+                img_grid = make_grid(self.G(
+                    n_samples, noise=fixed_latents).cpu().data)
                 # transpose axes to fit imageio convention
                 # i.e. (width, height, channels)
                 img_grid = np.transpose(img_grid.numpy(), (1, 2, 0))
                 training_progress_images.append(img_grid)
 
+            if i % self.save_every == 0:
+                save_path_g = '{}{}_iter_{}.pt'.format(save_weights_dir, self.G.name, i)
+                save_path_d = '{}{}_iter_{}.pt'.format(save_weights_dir, self.D.name, i)
+                torch.save(self.G.state_dict(), save_path_g)
+                torch.save(self.D.state_dict(), save_path_d)
+                
         if save_training_gif:
-            imageio.mimsave('./training_{}_epochs.gif'.format(n_iters),
-                            training_progress_images)
+            samples_path = '{}training_{}_iters.gif'.format(samples_dir, n_iters)
+            imageio.mimsave(samples_path, training_progress_images)
 
-    def sample_generator(self, num_samples):
-        latent_samples = Variable(self.G.sample_latent(num_samples))
+    def sample_generator(self, n_samples):
+        latent_samples = Variable(self.G.sample_latent(n_samples))
         if self.use_cuda:
             latent_samples = latent_samples.cuda()
-        generated_data = self.G(num_samples, noise=latent_samples)
+        generated_data = self.G(n_samples, noise=latent_samples)
         return generated_data
 
-    def sample(self, num_samples):
-        generated_data = self.sample_generator(num_samples)
+    def sample(self, n_samples):
+        generated_data = self.sample_generator(n_samples)
         # Remove color channel
         return generated_data.data.cpu().numpy()[:, 0, :, :]

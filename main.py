@@ -2,7 +2,6 @@ from networks import *
 import argparse
 import time
 import torch
-import os
 import numpy as np
 import tensorflow as tf
 import utils
@@ -25,9 +24,9 @@ parser.add_argument('--pretrained_dir',
                     default='./transfer_model/unconditional/bedroom/wgan-gp.model',
                     help='Directory path to the pretrained TF weights')
 # not passed along yet...
-parser.add_argument('--save_dir', default='./save_weights',
+parser.add_argument('--save_dir', default='./save_weights/',
                     help='Directory to save the model')
-parser.add_argument('--samples_dir', type=str, default='.samples/',
+parser.add_argument('--samples_dir', type=str, default='./samples/',
                     help='Directory to samples images')
 
 # model parameters
@@ -78,19 +77,16 @@ data_iter = iter(DataLoader(
     sampler=InfiniteSamplerWrapper(dataset), num_workers=0))
 print('loaded dataset')
 
-generator = Generator(
-    args.dim, args.latent_dim, args.n_pixels, args.bn_g)
-discriminator = Discriminator(
-    args.dim, args.n_pixels, args.bn_d)
+generator = Generator(args.dim, args.latent_dim, args.n_pixels, args.bn_g)
+discriminator = Discriminator(args.dim, args.n_pixels, args.bn_d)
 print('initialized model')
 
-tf_path = os.path.abspath(args.pretrained_dir)
-init_vars = tf.train.list_variables(tf_path) 
+init_vars = tf.train.list_variables(args.pretrained_dir) 
 weights_g = {}
 weights_d = {}
 
 for name, shape in init_vars:
-    array = tf.train.load_variable(tf_path, name)
+    array = tf.train.load_variable(args.pretrained_dir, name)
     name = name.split('/')[-1]
     if name.startswith('Generator'):
         weights_g[name] = torch.from_numpy(array)
@@ -117,4 +113,6 @@ trainer = Trainer(generator, discriminator, G_optimizer, D_optimizer,
                   gp_weight=args.gp_weight, critic_iterations=args.critic_iters, 
                   print_every=args.print_every, save_every=args.save_every,
                   use_cuda=torch.cuda.is_available())
-trainer.train(data_iter, args.n_iters, save_training_gif=True)
+trainer.train(data_iter, args.n_iters,
+              n_samples=args.n_samples, save_training_gif=True,
+              save_weights_dir=args.save_dir, samples_dir=args.samples_dir)
