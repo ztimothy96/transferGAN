@@ -44,7 +44,8 @@ class Trainer():
 
         # Get gradient penalty
         gradient_penalty = self._gradient_penalty(data, generated_data)
-        self.losses['GP'].append(gradient_penalty.data[0])
+        self.losses['GP'].append(gradient_penalty.item())
+        
 
         # Create total loss and optimize
         self.D_opt.zero_grad()
@@ -54,7 +55,7 @@ class Trainer():
         self.D_opt.step()
 
         # Record loss
-        self.losses['D'].append(d_loss.data[0])
+        self.losses['D'].append(d_loss.item())
 
     def _generator_train_iteration(self, data):
         """ """
@@ -71,7 +72,7 @@ class Trainer():
         self.G_opt.step()
 
         # Record loss
-        self.losses['G'].append(g_loss.data[0])
+        self.losses['G'].append(g_loss.item())
 
     def _gradient_penalty(self, real_data, generated_data):
         batch_size = real_data.size()[0]
@@ -98,7 +99,7 @@ class Trainer():
         # Gradients have shape (batch_size, num_channels, img_width, img_height),
         # so flatten to easily take norm per example in batch
         gradients = gradients.view(batch_size, -1)
-        self.losses['gradient_norm'].append(gradients.norm(2, dim=1).mean().data[0])
+        self.losses['gradient_norm'].append(gradients.norm(2, dim=1).mean().item())
 
         # Derivatives of the gradient close to 0 can cause problems because of
         # the square root, so manually calculate norm and add epsilon
@@ -110,10 +111,11 @@ class Trainer():
     def _train_iter(self, data_iter, i):
         data = data_iter.next()
         self.num_steps += 1
-        print('Real data shape: {}'.format(data.shape))
+        print('Starting critic iteration {}'.format(i+1))
         self._critic_train_iteration(data)
         # Only update generator every |critic_iterations| iterations
         if self.num_steps % self.critic_iterations == 0:
+            print('Starting generator iteration {}'.format(i+1))
             self._generator_train_iteration(data)
 
         if i % self.print_every == 0:

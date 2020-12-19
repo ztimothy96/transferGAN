@@ -172,8 +172,7 @@ class Generator(nn.Module):
         x = F.relu(x)
         x = self.Output(x)
         x = torch.tanh(x)
-        output_dim = self.n_pixels * self.n_pixels * 3
-        x = x.view(-1, output_dim)
+        x = x.view(-1, 3, self.n_pixels, self.n_pixels)
         return x
 
     def sample_latent(self, num_samples):
@@ -206,7 +205,5 @@ class Discriminator(nn.Module):
         x = x.view(-1, fact * fact * 8 * self.dim)
         x = self.Output(x)
         x = x.view(-1)
-        print('Critic output: {}'.format(x.shape))
-        print(x)
         return x
     
