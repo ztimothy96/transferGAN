@@ -9,8 +9,8 @@ from PIL import Image, ImageFile
 # https://github.com/naoto0804/pytorch-AdaIN/blob/master/train.py
 
 train_transform = transforms.Compose([
-    transforms.Resize(size=(512, 512)),
-    transforms.RandomCrop(256),
+    transforms.Resize(size=(64, 64)),
+    #transforms.RandomCrop(256),
     transforms.ToTensor()])
 
 class FlatFolderDataset(Dataset):

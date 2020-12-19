@@ -66,7 +66,7 @@ class Trainer():
 
         # Calculate loss and optimize
         d_generated = self.D(generated_data)
-        g_loss = - d_generated.mean()
+        g_loss = -d_generated.mean()
         g_loss.backward()
         self.G_opt.step()
 
@@ -107,23 +107,24 @@ class Trainer():
         # Return gradient penalty
         return self.gp_weight * ((gradients_norm - 1) ** 2).mean()
 
-    def _train_epoch(self, data_loader):
-        for i, data in enumerate(data_loader):
-            self.num_steps += 1
-            self._critic_train_iteration(data[0])
-            # Only update generator every |critic_iterations| iterations
-            if self.num_steps % self.critic_iterations == 0:
-                self._generator_train_iteration(data[0])
+    def _train_iter(self, data_iter, i):
+        data = data_iter.next()
+        self.num_steps += 1
+        print('Real data shape: {}'.format(data.shape))
+        self._critic_train_iteration(data)
+        # Only update generator every |critic_iterations| iterations
+        if self.num_steps % self.critic_iterations == 0:
+            self._generator_train_iteration(data)
 
-            if i % self.print_every == 0:
-                print("Iteration {}".format(i + 1))
-                print("D: {}".format(self.losses['D'][-1]))
-                print("GP: {}".format(self.losses['GP'][-1]))
-                print("Gradient norm: {}".format(self.losses['gradient_norm'][-1]))
-                if self.num_steps > self.critic_iterations:
-                    print("G: {}".format(self.losses['G'][-1]))
+        if i % self.print_every == 0:
+            print("Iteration {}".format(i + 1))
+            print("D: {}".format(self.losses['D'][-1]))
+            print("GP: {}".format(self.losses['GP'][-1]))
+            print("Gradient norm: {}".format(self.losses['gradient_norm'][-1]))
+            if self.num_steps > self.critic_iterations:
+                print("G: {}".format(self.losses['G'][-1]))
 
-    def train(self, data_loader, epochs, save_training_gif=True):
+    def train(self, data_iter, n_iters, save_training_gif=True):
         if save_training_gif:
             # Fix latents to see how image generation improves during training
             fixed_latents = Variable(self.G.sample_latent(64))
@@ -131,9 +132,8 @@ class Trainer():
                 fixed_latents = fixed_latents.cuda()
             training_progress_images = []
 
-        for epoch in range(epochs):
-            print("\nEpoch {}".format(epoch + 1))
-            self._train_epoch(data_loader)
+        for i in range(n_iters):
+            self._train_iter(data_iter, i)
 
             if save_training_gif:
                 # Generate batch of images and convert to grid
@@ -152,7 +152,7 @@ class Trainer():
         latent_samples = Variable(self.G.sample_latent(num_samples))
         if self.use_cuda:
             latent_samples = latent_samples.cuda()
-        generated_data = self.G(latent_samples)
+        generated_data = self.G(num_samples, noise=latent_samples)
         return generated_data
 
     def sample(self, num_samples):

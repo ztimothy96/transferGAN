@@ -3,9 +3,30 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import math
+
 # note to self: ignoring he initialization throughout, since pre-training.
 # https://blog.paperspace.com/pytorch-101-advanced/
 
+class LayerNorm(nn.Module):
+    def __init__(self, dim):
+        super(LayerNorm, self).__init__()
+        self.weight = torch.ones(dim)
+        self.bias = torch.zeros(dim)
+
+    def normalize(self, x, dim=0, eps=0):
+        mean = x.mean(dim=dim, keepdim=True)
+        var = x.var(dim=dim, unbiased=False, keepdim=True)
+        return (x-mean)/(var+eps)**0.5
+
+    def affine(self, x):
+        return x * self.weight.view(1, -1, 1, 1) + self.bias.view(1, -1, 1, 1)
+
+    def forward(self, x):
+        x = self.normalize(x, dim=(1, 2, 3), eps=1e-5)
+        return self.affine(x)
+
+
+        
 class ConvMeanPool(nn.Conv2d):
     def __init__(self, input_dim, output_dim, filter_size, bias=True, padding=0):
         super(ConvMeanPool, self).__init__(
@@ -71,12 +92,17 @@ class ResBlock(nn.Module):
             if norm=='batch':
                 self.BN = nn.ModuleList([
                     nn.BatchNorm2d(input_dim, eps=1e-3, momentum=1.0),
-                    nn.BatchNorm2d(output_dim)])
+                    nn.BatchNorm2d(output_dim, eps=1e-3, momentum=1.0)])
 
             elif norm=='layer':
+                '''
                 self.BN = nn.ModuleList([
                     nn.LayerNorm(input_dim),
                     nn.LayerNorm(input_dim)])
+                '''
+                self.BN = nn.ModuleList([
+                    LayerNorm(input_dim),
+                    LayerNorm(input_dim)])
 
             else:
                 raise Exception('invalid normalization value')
@@ -180,5 +206,7 @@ class Discriminator(nn.Module):
         x = x.view(-1, fact * fact * 8 * self.dim)
         x = self.Output(x)
         x = x.view(-1)
+        print('Critic output: {}'.format(x.shape))
+        print(x)
         return x
     
