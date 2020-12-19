@@ -12,7 +12,8 @@ from torch.autograd import grad as torch_grad
 
 class Trainer():
     def __init__(self, generator, discriminator, gen_optimizer, dis_optimizer,
-                 gp_weight=10, critic_iterations=5, print_every=50,
+                 gp_weight=10, critic_iterations=5,
+                 print_every=50, save_every=50,
                  use_cuda=False):
         self.G = generator
         self.G_opt = gen_optimizer
@@ -24,6 +25,7 @@ class Trainer():
         self.gp_weight = gp_weight
         self.critic_iterations = critic_iterations
         self.print_every = print_every
+        self.save_every = save_every
 
         if self.use_cuda:
             self.G.cuda()
@@ -126,10 +128,14 @@ class Trainer():
             if self.num_steps > self.critic_iterations:
                 print("G: {}".format(self.losses['G'][-1]))
 
+        if i % self.save_every == 0:
+            pass
+
     def train(self, data_iter, n_iters, save_training_gif=True):
         if save_training_gif:
             # Fix latents to see how image generation improves during training
-            fixed_latents = Variable(self.G.sample_latent(64))
+            num_samples = 64
+            fixed_latents = Variable(self.G.sample_latent(num_samples))
             if self.use_cuda:
                 fixed_latents = fixed_latents.cuda()
             training_progress_images = []
@@ -137,17 +143,15 @@ class Trainer():
         for i in range(n_iters):
             self._train_iter(data_iter, i)
 
-            if save_training_gif:
-                # Generate batch of images and convert to grid
-                img_grid = make_grid(self.G(fixed_latents).cpu().data)
-                # Convert to numpy and transpose axes to fit imageio convention
+            if save_training_gif and i % self.save_every == 0:
+                img_grid = make_grid(self.G(num_samples, noise=fixed_latents).cpu().data)
+                # transpose axes to fit imageio convention
                 # i.e. (width, height, channels)
                 img_grid = np.transpose(img_grid.numpy(), (1, 2, 0))
-                # Add image grid to training progress
                 training_progress_images.append(img_grid)
 
         if save_training_gif:
-            imageio.mimsave('./training_{}_epochs.gif'.format(epochs),
+            imageio.mimsave('./training_{}_epochs.gif'.format(n_iters),
                             training_progress_images)
 
     def sample_generator(self, num_samples):
