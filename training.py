@@ -9,7 +9,6 @@ from torchvision.utils import make_grid
 from torch.autograd import Variable
 from torch.autograd import grad as torch_grad
 
-
 class Trainer():
     def __init__(self, generator, discriminator, gen_optimizer, dis_optimizer,
                  gp_weight=10, critic_iterations=5,
@@ -129,7 +128,8 @@ class Trainer():
                 print("G: {}".format(self.losses['G'][-1]))
 
         if i % self.save_every == 0:
-            pass
+            torch.save(self.G.state_dict(), '{}_iter_{}.pt'.format(self.G.name, i))
+            torch.save(self.D.state_dict(), '{}_iter_{}.pt'.format(self.D.name, i))
 
     def train(self, data_iter, n_iters, save_training_gif=True):
         if save_training_gif:

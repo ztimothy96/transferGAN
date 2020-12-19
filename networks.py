@@ -131,13 +131,14 @@ class ResBlock(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, dim, latent_dim, n_pixels, bn=True):
+    def __init__(self, dim, latent_dim, n_pixels, bn=True, name='generator'):
         super(Generator, self).__init__()
         self.dim = dim
         self.latent_dim = latent_dim
         self.n_pixels = n_pixels
-        fact = n_pixels // 16
+        self.name=name
         
+        fact = n_pixels // 16
         self.Input = nn.Linear(latent_dim, fact*fact*8*dim)
         self.Res = nn.ModuleList([ResBlock(8*dim, 8*dim, 3,
                                            resample='up', bn=bn, norm='batch'),
@@ -180,10 +181,12 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, dim, n_pixels, bn=True):
+    def __init__(self, dim, n_pixels, bn=True, name='discriminator'):
         super(Discriminator, self).__init__()
         self.dim = dim
         self.n_pixels = n_pixels
+        self.name=name
+        
         fact = n_pixels // 16
         self.Input = nn.Conv2d(3, dim, 3, padding=1)
         self.Res = nn.ModuleList([ResBlock(1*dim, 2*dim, 3,
