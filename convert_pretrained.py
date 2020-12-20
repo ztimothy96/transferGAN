@@ -7,13 +7,13 @@ from networks import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--pretrained_dir', type=str,
-                    default='./pretrained_tf/unconditional/bedroom/wgan-gp.model',
+                    default='./pretrained_tf/unconditional/imagenet/wgan-gp.model',
                     help='Directory path to the pretrained TF weights')
 parser.add_argument('--save_dir', type=str,
-                    default='./pretrained_torch/unconditional/bedroom/',
+                    default='./pretrained_torch/unconditional/imagenet/',
                     help='Directory to save the converted pytorch weights')
 parser.add_argument('--dataset_name', type=str,
-                    default='bedroom',
+                    default='imagenet',
                     help='Dataset on which model was pretrained')
 
 # model parameters
@@ -41,13 +41,10 @@ weights_d = {}
 
 for name, shape in init_vars:
     array = tf.train.load_variable(args.pretrained_dir, name)
-    name = name.split('/')[-1]
     if name.startswith('Generator'):
         weights_g[name] = torch.from_numpy(array)
     elif name.startswith('Discriminator'):
         weights_d[name] = torch.from_numpy(array)
-    else:
-        raise Exception('invalid weight name')
 
 utils.load_weights(generator, weights_g)
 utils.load_weights(discriminator, weights_d)

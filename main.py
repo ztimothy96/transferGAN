@@ -19,10 +19,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', type=str, default='./data0/lsun/bedroom/0/0/',
                     help='Directory path to training images')
 parser.add_argument('--pretrained_dir_g',
-                    default='./pretrained_torch/unconditional/bedroom/generator_bedroom.pt',
+                    default='./pretrained_torch/unconditional/imagenet/generator_imagenet.pt',
                     help='Path to the pretrained pytorch generator weights')
 parser.add_argument('--pretrained_dir_d',
-                    default='./pretrained_torch/unconditional/bedroom/discriminator_bedroom.pt',
+                    default='./pretrained_torch/unconditional/imagenet/discriminator_imagenet.pt',
                     help='Path to the pretrained pytorch discriminator weights')
 parser.add_argument('--save_dir', default='./save_weights/',
                     help='Directory to save the model')
