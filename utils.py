@@ -1,5 +1,6 @@
 import re
 import torch
+from networks import *
 
 # load pretrained weights from tf to pytorch model
 # adapted from https://medium.com/huggingface/from-tensorflow-to-pytorch-265f40ef2a28
@@ -66,21 +67,5 @@ def load_weights(model, weight_dict):
         pointer.data = tensor
 
 
-def save_weights(model, save_path):
-    state_dict = model.state_dict()
-    for key in state_dict.keys():
-        state_dict[key] = state_dict[key].to(torch.device('cpu'))
-    torch.save(state_dict, save_path)
-
-
-def test_loaded_bedroom_weights(g_dict, g):
-    print(torch.dist(g_dict['Generator.Input.W'], g.Input.weight.permute(1, 0)))
-    print(torch.dist(g_dict['Generator.Input.b'], g.Input.bias))
-    print(torch.dist(g_dict['Generator.Res1.BN1.moving_mean'], g.Res[0].BN[0].running_mean))
-    print(torch.dist(g_dict['Generator.Res1.BN1.moving_variance'], g.Res[0].BN[0].running_var))
-    print(torch.dist(g_dict['Generator.Res1.BN1.offset'], g.Res[0].BN[0].bias))
-    print(torch.dist(g_dict['Generator.Res1.BN1.scale'], g.Res[0].BN[0].weight))
-    print(torch.dist(g_dict['Generator.Res1.Conv1.Filters'], g.Res[0].Conv[0].weight.permute(2, 3, 1, 0)))
-    print(torch.dist(g_dict['Generator.Res1.Conv2.Filters'], g.Res[0].Conv[1].weight.permute(2, 3, 1, 0)))
-    print(torch.dist(g_dict['Generator.Res1.Conv2.Biases'], g.Res[0].Conv[1].bias))
+    
     

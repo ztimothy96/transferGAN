@@ -1,9 +1,7 @@
 from networks import *
 import argparse
-import time
 import torch
 import numpy as np
-import tensorflow as tf
 import utils
 import torch.optim as optim
 import loader
@@ -20,17 +18,19 @@ print('imported all libraries')
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', type=str, default='./data0/lsun/bedroom/0/0/',
                     help='Directory path to training images')
-parser.add_argument('--pretrained_dir',
-                    default='./transfer_model/unconditional/bedroom/wgan-gp.model',
-                    help='Directory path to the pretrained TF weights')
-# not passed along yet...
+parser.add_argument('--pretrained_dir_g',
+                    default='./pretrained_torch/unconditional/bedroom/generator_bedroom.pt',
+                    help='Path to the pretrained pytorch generator weights')
+parser.add_argument('--pretrained_dir_d',
+                    default='./pretrained_torch/unconditional/bedroom/discriminator_bedroom.pt',
+                    help='Path to the pretrained pytorch discriminator weights')
 parser.add_argument('--save_dir', default='./save_weights/',
                     help='Directory to save the model')
 parser.add_argument('--samples_dir', type=str, default='./samples/',
-                    help='Directory to samples images')
+                    help='Directory to save sample images')
 
 # model parameters
-# these are fixed, unless you want to train from scratch...
+# these are fixed, unless you want to train from scrattch...
 parser.add_argument('--n_pixels', type=int, default=64,
                     help='Height and width of image')
 parser.add_argument('--batch_size', type=int, default=16)
@@ -77,26 +77,13 @@ data_iter = iter(DataLoader(
     sampler=InfiniteSamplerWrapper(dataset), num_workers=0))
 print('loaded dataset')
 
+# load model and weights
 generator = Generator(args.dim, args.latent_dim, args.n_pixels, args.bn_g)
 discriminator = Discriminator(args.dim, args.n_pixels, args.bn_d)
 print('initialized model')
 
-init_vars = tf.train.list_variables(args.pretrained_dir) 
-weights_g = {}
-weights_d = {}
-
-for name, shape in init_vars:
-    array = tf.train.load_variable(args.pretrained_dir, name)
-    name = name.split('/')[-1]
-    if name.startswith('Generator'):
-        weights_g[name] = torch.from_numpy(array)
-    elif name.startswith('Discriminator'):
-        weights_d[name] = torch.from_numpy(array)
-    else:
-        raise Exception('invalid weight name')
-
-utils.load_weights(generator, weights_g)
-utils.load_weights(discriminator, weights_d)
+generator.load_state_dict(torch.load(args.pretrained_dir_g))
+discriminator.load_state_dict(torch.load(args.pretrained_dir_d))
 print('loaded weights')
 
 # set up optimizers
@@ -105,8 +92,6 @@ G_optimizer = optim.Adam(generator.parameters(),
                          lr=args.lr_g, betas=(args.beta1_g, 0.9))
 D_optimizer = optim.Adam(discriminator.parameters(),
                          lr=args.lr_d, betas= (args.beta1_d, 0.9))
-
-# restore weights in the model from pytorch... later
 
 # train
 trainer = Trainer(generator, discriminator, G_optimizer, D_optimizer,

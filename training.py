@@ -138,19 +138,20 @@ class Trainer():
         for i in range(n_iters):
             self._train_iter(data_iter, i)
 
-            if save_training_gif and i % self.save_every == 0:
-                img_grid = make_grid(self.G(
-                    n_samples, noise=fixed_latents).cpu().data)
-                # transpose axes to fit imageio convention
-                # i.e. (width, height, channels)
-                img_grid = np.transpose(img_grid.numpy(), (1, 2, 0))
-                training_progress_images.append(img_grid)
-
             if i % self.save_every == 0:
                 save_path_g = '{}{}_iter_{}.pt'.format(save_weights_dir, self.G.name, i)
                 save_path_d = '{}{}_iter_{}.pt'.format(save_weights_dir, self.D.name, i)
                 torch.save(self.G.state_dict(), save_path_g)
                 torch.save(self.D.state_dict(), save_path_d)
+
+                if save_training_gif:
+                    samples = self.G(n_samples, noise=fixed_latents)
+                    samples = (samples+1.0)*(255/2.0)
+                    img_grid = make_grid(samples.cpu().data)
+                    # transpose axes to fit imageio convention
+                    # i.e. (width, height, channels)
+                    img_grid = np.transpose(img_grid.numpy(), (1, 2, 0))
+                    training_progress_images.append(img_grid)
                 
         if save_training_gif:
             samples_path = '{}training_{}_iters.gif'.format(samples_dir, n_iters)
