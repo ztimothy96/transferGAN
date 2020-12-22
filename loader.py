@@ -37,9 +37,6 @@ class FlatFolderDataset(Dataset):
 
 if __name__ == '__main__':
     DATA_DIR = 'data0/lsun/bedroom/0/0/'
-
-
-
     dataset = FlatFolderDataset(DATA_DIR, train_transform)
     data_iter = iter(DataLoader(dataset))
     next(data_iter)

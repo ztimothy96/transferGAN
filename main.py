@@ -2,7 +2,6 @@ from networks import *
 import argparse
 import torch
 import numpy as np
-import utils
 import torch.optim as optim
 import loader
 from training import Trainer
@@ -16,7 +15,8 @@ print('imported all libraries')
 
 # parsing based on https://github.com/naoto0804/pytorch-AdaIN/blob/master/train.py
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_dir', type=str, default='./data0/lsun/bedroom/0/0/',
+parser.add_argument('--data_dir', type=str, default='../../../data/tzhou28/bedroom00/',
+                    #default='./data0/lsun/bedroom/0/0/'
                     help='Directory path to training images')
 parser.add_argument('--pretrained_dir_g',
                     default='./pretrained_torch/unconditional/imagenet/generator_imagenet.pt',
