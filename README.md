@@ -9,6 +9,10 @@ This repo holds a Pytorch adaptation of [Transferring GANs: generating images fr
 
 - Numpy 1.19.4
 
+- Torchvision 0.8.2
+
+- Imageio 2.9.0
+
 ## Sources and inspiration
 Much of this codebase is indebted to implementation ideas from Emilien Dupont's 
 Pytorch [implementation](https://github.com/EmilienDupont/wgan-gp) of WGAN-GP 
