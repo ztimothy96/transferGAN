@@ -20,9 +20,6 @@ class LayerNorm(nn.Module):
         return (x-mean)/(var+eps)**0.5
 
     def affine(self, x):
-        #print('weight device: {}'.format(self.weight.data.get_device()))
-        #print('bias device: {}'.format(self.bias.data.get_device()))
-        #print('input device: {}'.format(x.get_device()))
         return x * self.weight.view(1, -1, 1, 1) + self.bias.view(1, -1, 1, 1)
 
     def forward(self, x):
