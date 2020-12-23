@@ -3,11 +3,13 @@ import argparse
 import torch
 import numpy as np
 import torch.optim as optim
+import time
 from torchvision import transforms, utils
 from loader import FlatFolderDataset
 from training import Trainer
 from torch.utils.data import DataLoader
 from sampler import InfiniteSamplerWrapper
+
 
 # parsing based on https://github.com/naoto0804/pytorch-AdaIN/blob/master/train.py
 parser = argparse.ArgumentParser()
@@ -99,6 +101,8 @@ G_optimizer = optim.Adam(generator.parameters(),
 D_optimizer = optim.Adam(discriminator.parameters(),
                          lr=args.lr_d, betas= (args.beta1_d, 0.9))
 
+start = time.time()
+
 # train
 trainer = Trainer(generator, discriminator, G_optimizer, D_optimizer,
                   gp_weight=args.gp_weight, critic_iterations=args.critic_iters, 
@@ -107,3 +111,6 @@ trainer = Trainer(generator, discriminator, G_optimizer, D_optimizer,
 trainer.train(data_iter, args.n_iters,
               n_samples=args.n_samples, save_training_gif=True,
               save_weights_dir=args.save_dir, samples_dir=args.samples_dir)
+
+end = time.time()
+print('Time elapsed: {} seconds'.format(end-start))
