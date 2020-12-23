@@ -15,8 +15,9 @@ print('imported all libraries')
 
 # parsing based on https://github.com/naoto0804/pytorch-AdaIN/blob/master/train.py
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_dir', type=str, default='../../../data/tzhou28/bedroom00/',
-                    #default='./data0/lsun/bedroom/0/0/'
+parser.add_argument('--data_dir', type=str,
+                    #default='../../../data/tzhou28/bedroom00/',
+                    default='./data0/lsun/bedroom/0/0/',
                     help='Directory path to training images')
 parser.add_argument('--pretrained_dir_g',
                     default='./pretrained_torch/unconditional/imagenet/generator_imagenet.pt',
@@ -70,6 +71,9 @@ parser.add_argument('--n_samples', type=int, default=64,
                     help='Number of samples to save at each checkpoint')
 args = parser.parse_args()
 
+n_gpus = torch.cuda.device_count()
+available_gpus = [torch.cuda.device(i) for i in range(n_gpus)]
+
 # load the data
 dataset = loader.FlatFolderDataset(args.data_dir, loader.train_transform)
 data_iter = iter(DataLoader(
@@ -82,6 +86,8 @@ generator = Generator(args.dim, args.latent_dim, args.n_pixels, args.bn_g)
 discriminator = Discriminator(args.dim, args.n_pixels, args.bn_d)
 print('initialized model')
 
+print('discriminator weights:')
+print(torch.load(args.pretrained_dir_d).keys())
 generator.load_state_dict(torch.load(args.pretrained_dir_g))
 discriminator.load_state_dict(torch.load(args.pretrained_dir_d))
 print('loaded weights')

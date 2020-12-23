@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import math
+from torch.nn.parameter import Parameter
 
 # note to self: ignoring he initialization throughout, since pre-training.
 # https://blog.paperspace.com/pytorch-101-advanced/
@@ -10,8 +11,8 @@ import math
 class LayerNorm(nn.Module):
     def __init__(self, dim):
         super(LayerNorm, self).__init__()
-        self.weight = torch.ones(dim)
-        self.bias = torch.zeros(dim)
+        self.weight = Parameter(torch.ones(dim))
+        self.bias = Parameter(torch.zeros(dim))
 
     def normalize(self, x, dim=0, eps=0):
         mean = x.mean(dim=dim, keepdim=True)
@@ -19,6 +20,9 @@ class LayerNorm(nn.Module):
         return (x-mean)/(var+eps)**0.5
 
     def affine(self, x):
+        #print('weight device: {}'.format(self.weight.data.get_device()))
+        #print('bias device: {}'.format(self.bias.data.get_device()))
+        #print('input device: {}'.format(x.get_device()))
         return x * self.weight.view(1, -1, 1, 1) + self.bias.view(1, -1, 1, 1)
 
     def forward(self, x):

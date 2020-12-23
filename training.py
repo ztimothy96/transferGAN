@@ -27,6 +27,7 @@ class Trainer():
         self.save_every = save_every
 
         if self.use_cuda:
+            print('using cuda')
             self.G.cuda()
             self.D.cuda()
 
