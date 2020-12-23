@@ -12,8 +12,8 @@ from sampler import InfiniteSamplerWrapper
 # parsing based on https://github.com/naoto0804/pytorch-AdaIN/blob/master/train.py
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', type=str,
-                    #default='../../../data/tzhou28/bedroom00/',
-                    default='./data0/lsun/bedroom/0/0/',
+                    default='../../../data/tzhou28/bedroom00/',
+                    #default='./data0/lsun/bedroom/0/0/',
                     help='Directory path to training images')
 parser.add_argument('--pretrained_dir_g',
                     default='./pretrained_torch/unconditional/imagenet/generator_imagenet.pt',
@@ -41,13 +41,13 @@ parser.add_argument('--bn_d', type=bool, default=True,
                     help='Option to include normalization in discriminator')
 
 #training parameters
-parser.add_argument('--iter_start', type=int, default=64,
+parser.add_argument('--iter_start', type=int, default=0,
                     help='Iteration from which to resume training')
 parser.add_argument('--n_examples', type=int, default=1000,
                     help='Number of training examples to use')
-parser.add_argument('--n_iters', type=int, default=2,
+parser.add_argument('--n_iters', type=int, default=25000,
                     help='Number of iterations to train for')
-parser.add_argument('--critic_iters', type=int, default=2,
+parser.add_argument('--critic_iters', type=int, default=5,
                     help='Number of critic training steps per generator step')
 parser.add_argument('--gp_weight', type=float, default=10,
                     help='Regularization weight for the gradient penalty')
@@ -63,9 +63,9 @@ parser.add_argument('--n_gpus', type=int, default=torch.cuda.device_count(),
                     help='Number of GPUs available')
 
 #checkpoint output parameters
-parser.add_argument('--save_every', type=int, default=1,
+parser.add_argument('--save_every', type=int, default=1000,
                     help='Number of iterations before saving model weights and samples')
-parser.add_argument('--print_every', type=int, default=1,
+parser.add_argument('--print_every', type=int, default=1000,
                     help='Number of iterations before printing losses to console')
 parser.add_argument('--n_samples', type=int, default=64,
                     help='Number of samples to save at each checkpoint')
