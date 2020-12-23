@@ -9,11 +9,6 @@ from training import Trainer
 from torch.utils.data import DataLoader
 from sampler import InfiniteSamplerWrapper
 
-print('imported all libraries')
-
-# need different data types depending on whether we're using GPU or CPU
-# use CPU for now, add params later
-
 # parsing based on https://github.com/naoto0804/pytorch-AdaIN/blob/master/train.py
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', type=str,
@@ -77,7 +72,8 @@ parser.add_argument('--n_samples', type=int, default=64,
 args = parser.parse_args()
 
 # available_gpus = [torch.cuda.device(i) for i in range(args.n_gpus)]
-
+for arg in vars(args):
+	print(arg, getattr(args, arg))
 
 # load the data
 train_transform = transforms.Compose([
@@ -89,19 +85,15 @@ dataset = FlatFolderDataset(
 data_iter = iter(DataLoader(
     dataset, batch_size = args.batch_size,
     sampler=InfiniteSamplerWrapper(dataset), num_workers=0))
-print('loaded dataset')
 
 # load model and weights
 generator = Generator(args.dim, args.latent_dim, args.n_pixels, args.bn_g)
 discriminator = Discriminator(args.dim, args.n_pixels, args.bn_d)
-print('initialized model')
-
 generator.load_state_dict(torch.load(args.pretrained_dir_g))
 discriminator.load_state_dict(torch.load(args.pretrained_dir_d))
-print('loaded weights')
 
 # set up optimizers
-#what is tf.colocate_gradients_with_ops?
+# what is tf.colocate_gradients_with_ops?
 G_optimizer = optim.Adam(generator.parameters(),
                          lr=args.lr_g, betas=(args.beta1_g, 0.9))
 D_optimizer = optim.Adam(discriminator.parameters(),

@@ -18,10 +18,11 @@ class FlatFolderDataset(Dataset):
             for name in files:
                 if name.endswith('.jpg'):
                     self.paths.append(os.path.join(path, name))
-
+                    
         if n_examples:
             if n_examples > len(self.paths):
-                raise ValueError('not enough examples in folder')
+                raise ValueError('only {} examples in folder: {} needed'.format(
+                    len(self.paths), n_examples))
             # grab a random subset of size n_examples
             random.shuffle(self.paths)
             self.paths = self.paths[:n_examples]

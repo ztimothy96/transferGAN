@@ -27,7 +27,6 @@ class Trainer():
         self.save_every = save_every
 
         if self.use_cuda:
-            print('using cuda')
             self.G.cuda()
             self.D.cuda()
 
@@ -113,11 +112,9 @@ class Trainer():
     def _train_iter(self, data_iter, i):
         data = data_iter.next()
         self.num_steps += 1
-        print('Starting critic iteration {}'.format(i+1))
         self._critic_train_iteration(data)
         # Only update generator every |critic_iterations| iterations
         if self.num_steps % self.critic_iterations == 0:
-            print('Starting generator iteration {}'.format(i+1))
             self._generator_train_iteration(data)
 
         if i % self.print_every == 0:
