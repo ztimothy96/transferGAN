@@ -77,8 +77,10 @@ for arg in vars(args):
 	print(arg, getattr(args, arg))
 
 # load the data
+# data loaded in range [0.0, 1.0] while network output is in range [-1.0, 1.0]
 train_transform = transforms.Compose([
     transforms.Resize(size=(args.n_pixels, args.n_pixels)),
+    transforms.Lambda(lambda x: x*2.0 - 1.0),
     transforms.ToTensor()])
 
 dataset = FlatFolderDataset(
