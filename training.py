@@ -46,7 +46,6 @@ class Trainer():
         # Get gradient penalty
         gradient_penalty = self._gradient_penalty(data, generated_data)
         self.losses['GP'].append(gradient_penalty.item())
-        
 
         # Create total loss and optimize
         self.D_opt.zero_grad()
@@ -88,10 +87,7 @@ class Trainer():
         if self.use_cuda:
             interpolated = interpolated.cuda()
 
-        # Calculate probability of interpolated examples
         prob_interpolated = self.D(interpolated)
-
-        # Calculate gradients of probabilities with respect to examples
         gradients = torch_grad(outputs=prob_interpolated, inputs=interpolated,
                                grad_outputs=torch.ones(prob_interpolated.size()).cuda() if self.use_cuda else torch.ones(
                                prob_interpolated.size()),
@@ -105,25 +101,22 @@ class Trainer():
         # Derivatives of the gradient close to 0 can cause problems because of
         # the square root, so manually calculate norm and add epsilon
         gradients_norm = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
-
-        # Return gradient penalty
         return self.gp_weight * ((gradients_norm - 1) ** 2).mean()
 
     def _train_iter(self, data_iter, i):
         data = data_iter.next()
         self.num_steps += 1
-        self._critic_train_iteration(data)
-        # Only update generator every |critic_iterations| iterations
-        if self.num_steps % self.critic_iterations == 0:
-            self._generator_train_iteration(data)
+        # each iteration trains generator once and critic [critic_iterations] many times
+        for _ in self.critic_iterations:
+            self._critic_train_iteration(data)
+        self._generator_train_iteration(data)
 
         if i % self.print_every == 0:
-            print("Iteration {}".format(i + 1))
+            print("Iteration {}".format(i))
             print("D: {}".format(self.losses['D'][-1]))
             print("GP: {}".format(self.losses['GP'][-1]))
             print("Gradient norm: {}".format(self.losses['gradient_norm'][-1]))
-            if self.num_steps > self.critic_iterations:
-                print("G: {}".format(self.losses['G'][-1]))
+            print("G: {}".format(self.losses['G'][-1]))
 
     def train(self, data_iter, n_iters, n_samples=64,
               save_training_gif=True, save_weights_dir='./', samples_dir='./'):
