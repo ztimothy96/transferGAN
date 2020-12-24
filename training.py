@@ -5,6 +5,7 @@ import imageio
 import numpy as np
 import torch
 import torch.nn as nn
+import matplotlib.pyplot as plt
 from torchvision.utils import make_grid
 from torch.autograd import Variable
 from torch.autograd import grad as torch_grad
@@ -107,7 +108,7 @@ class Trainer():
         data = data_iter.next()
         self.num_steps += 1
         # each iteration trains generator once and critic [critic_iterations] many times
-        for _ in self.critic_iterations:
+        for _ in range(self.critic_iterations):
             self._critic_train_iteration(data)
         self._generator_train_iteration(data)
 
@@ -148,6 +149,8 @@ class Trainer():
             samples_path = '{}training_{}_iters.gif'.format(samples_dir, n_iters)
             imageio.mimsave(samples_path, training_progress_images)
 
+        self.plot_losses(samples_dir)
+
     def sample_generator(self, n_samples):
         latent_samples = Variable(self.G.sample_latent(n_samples))
         if self.use_cuda:
@@ -159,3 +162,25 @@ class Trainer():
         generated_data = self.sample_generator(n_samples)
         # Remove color channel
         return generated_data.data.cpu().numpy()[:, 0, :, :]
+
+    def plot_losses(self, samples_dir):
+        n_iters = len(self.losses['G'])
+        x = np.arange(0, n_iters)
+        fig, axes = plt.subplots(2, 2)
+        ((ax_G, ax_D), (ax_GP, ax_grad_norm)) = axes
+        ax_G.plot(x, np.array(self.losses['G']))
+        ax_G.set_title('Generator loss')
+        ax_D.plot(x, np.array(self.losses['D'])[
+            self.critic_iterations-1 : self.critic_iterations*n_iters : self.critic_iterations])
+        ax_D.set_title('Discriminator loss')
+        ax_GP.plot(x, np.array(self.losses['GP'])[
+            self.critic_iterations-1 : self.critic_iterations*n_iters : self.critic_iterations])
+        ax_GP.set_title('Gradient penalty')
+        ax_grad_norm.plot(x, np.array(self.losses['gradient_norm'])[
+            self.critic_iterations-1 : self.critic_iterations*n_iters : self.critic_iterations])
+        ax_grad_norm.set_title('Gradient norm')
+        for ax in axes.flat:
+            ax.set(xlabel='Iterations', ylabel='Loss')
+        plt.tight_layout()
+        fig.savefig('{}losses.jpg'.format(samples_dir))
+

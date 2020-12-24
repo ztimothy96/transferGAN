@@ -5,10 +5,9 @@ import numpy as np
 import torch.optim as optim
 import time
 from torchvision import transforms, utils
-from loader import FlatFolderDataset
+from loader import FlatFolderDataset, InfiniteSamplerWrapper
 from training import Trainer
 from torch.utils.data import DataLoader
-from sampler import InfiniteSamplerWrapper
 
 
 # parsing based on https://github.com/naoto0804/pytorch-AdaIN/blob/master/train.py
