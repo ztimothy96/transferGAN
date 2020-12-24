@@ -13,6 +13,8 @@ This repo holds a Pytorch adaptation of [Transferring GANs: generating images fr
 
 - Imageio 2.9.0
 
+- Matplotlib 3.3
+
 ## Sources and inspiration
 Much of this codebase is indebted to implementation ideas from Emilien Dupont's 
 Pytorch [implementation](https://github.com/EmilienDupont/wgan-gp) of WGAN-GP 
