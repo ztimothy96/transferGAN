@@ -2,6 +2,9 @@
 
 This repo holds a Pytorch adaptation of [Transferring GANs: generating images from limited data](https://arxiv.org/abs/1805.01677) (EECV 2018), still in progress. I may try some additional experiments after replicating the original results...
 
+## Training
+![10000_iters](https://github.com/ztimothy96/transferGAN/blob/main/training_10000_iters.gif)
+
 ## Dependencies
 - Python 3
 
