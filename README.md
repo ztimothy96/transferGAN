@@ -15,9 +15,9 @@ Here are samples from 10000 iterations of fine-tuning from ImageNet to LSUN Bedr
 
 - Torchvision 0.8.2
 
-- Imageio 2.9.0
+- Imageio 2.9.0 (for saving training gif)
 
-- Matplotlib 3.3
+- Matplotlib 3.3 (for plotting losses)
 
 ## Sources and inspiration
 Much of this codebase is indebted to implementation ideas from Emilien Dupont's 
