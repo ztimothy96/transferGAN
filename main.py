@@ -6,15 +6,15 @@ import torch.optim as optim
 import time
 from torchvision import transforms, utils
 from loader import FlatFolderDataset, InfiniteSamplerWrapper
-from training import Trainer
+from training import Trainer, EWCTrainer
 from torch.utils.data import DataLoader
 
 
 # parsing based on https://github.com/naoto0804/pytorch-AdaIN/blob/master/train.py
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', type=str,
-                    default='../../../data/tzhou28/bedroom00/',
-                    #default='./data0/lsun/bedroom/0/0/',
+                    #default='../../../data/tzhou28/bedroom00/',
+                    default='./data0/lsun/bedroom/0/0/',
                     help='Directory path to training images')
 parser.add_argument('--pretrained_dir_g',
                     default='./pretrained_torch/unconditional/imagenet/generator_imagenet.pt',
@@ -42,6 +42,8 @@ parser.add_argument('--bn_d', type=bool, default=True,
                     help='Option to include normalization in discriminator')
 
 #training parameters
+parser.add_argument('--mode', type=str, default='',
+                    help='Set to "ewc" to use ewc loss')
 parser.add_argument('--iter_start', type=int, default=0,
                     help='Iteration from which to resume training')
 parser.add_argument('--n_examples', type=int, default=1000,
@@ -60,6 +62,8 @@ parser.add_argument('--beta1_g', type=float, default=0.0,
                     help='Exponential decay rate for generator 1st moment estimates')
 parser.add_argument('--beta1_d', type=float, default=0.0,
                     help='Exponential decay rate for discriminator 1st moment estimates')
+parser.add_argument('--ewc_weight', type=float, default=5e8,
+                    help='Regularization weight for EWC loss')
 parser.add_argument('--n_gpus', type=int, default=torch.cuda.device_count(),
                     help='Number of GPUs available')
 
@@ -96,7 +100,6 @@ generator.load_state_dict(torch.load(args.pretrained_dir_g))
 discriminator.load_state_dict(torch.load(args.pretrained_dir_d))
 
 # set up optimizers
-# what is tf.colocate_gradients_with_ops?
 G_optimizer = optim.Adam(generator.parameters(),
                          lr=args.lr_g, betas=(args.beta1_g, 0.9))
 D_optimizer = optim.Adam(discriminator.parameters(),
@@ -105,10 +108,18 @@ D_optimizer = optim.Adam(discriminator.parameters(),
 start = time.time()
 
 # train
-trainer = Trainer(generator, discriminator, G_optimizer, D_optimizer,
-                  gp_weight=args.gp_weight, critic_iterations=args.critic_iters, 
-                  print_every=args.print_every, save_every=args.save_every,
-                  use_cuda=torch.cuda.is_available())
+if args.mode=='ewc':
+        trainer = EWCTrainer(generator, discriminator, G_optimizer, D_optimizer,
+                             gp_weight=args.gp_weight, ewc_weight=args.ewc_weight,
+                             critic_iterations=args.critic_iters,
+                             print_every=args.print_every, save_every=args.save_every,
+                             use_cuda=torch.cuda.is_available())
+else:
+        trainer = Trainer(generator, discriminator, G_optimizer, D_optimizer,
+                          gp_weight=args.gp_weight, critic_iterations=args.critic_iters,
+                          print_every=args.print_every, save_every=args.save_every,
+                          use_cuda=torch.cuda.is_available())
+
 trainer.train(data_iter, args.n_iters,
               n_samples=args.n_samples, save_training_gif=True,
               save_weights_dir=args.save_dir, samples_dir=args.samples_dir)

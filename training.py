@@ -187,25 +187,31 @@ class Trainer():
 # But subclasses are easy to maintain so I'll put it here for now
 class EWCTrainer(Trainer):
     def __init__(self, generator, discriminator, gen_optimizer, dis_optimizer,
-                 gp_weight=10, critic_iterations=5,
-                 print_every=50, save_every=50,
-                 use_cuda=False, ewc_weight=5e8):
+                 gp_weight=10, ewc_weight=5e8, critic_iterations=5,
+                 print_every=50, save_every=50, use_cuda=False):
         super().__init__(generator, discriminator, gen_optimizer, dis_optimizer,
                  gp_weight, critic_iterations, print_every, save_every, use_cuda)
         self.ewc_weight = ewc_weight
         # clone init params and save fisher information before training
         self.init_params = [p.clone() for p in generator.parameters()]
-        self.fisher = self.get_fisher_info()
-        
-    def get_fisher_info(self, model, n_samples=100):
-        sampled_data = self.sample_generator(n_samples)
-        log_prob = self.D(sampled_data)
-        loss_grads = grad(log_prob, model.parameters())
-        return torch.var(loss_grads, dim=1) for loss in loss_grads]
+
+        def get_fisher_info(n_samples=100):
+            sampled_data = self.sample_generator(n_samples)
+            log_prob = self.D(sampled_data) #size 100, as expected
+            loss_grads = torch_grad(outputs=log_prob, inputs=list(generator.parameters()),
+                               grad_outputs=torch.ones(log_prob.size()).cuda() if self.use_cuda else torch.ones(
+                               log_prob.size()),
+                               create_graph=True, retain_graph=True)
+            print(len(loss_grads))
+            print(l.shape for l in loss_grads)
+            return [torch.var(loss, dim=0) for loss in loss_grads]
+            # check dimension problems... 
+
+        self.fisher = get_fisher_info()
 
     def _ewc_loss(self, params):
-        assert len(params) == len(self.init_params)
-        assert len(params) == len(self.fisher)
+        assert len(list(params)) == len(self.init_params)
+        assert len(list(params)) == len(self.fisher)
         loss = 0
         for i in range(len(params)):
             loss += torch.sum(self.fisher[i] * (params[i] - self.init_params[i])**2)
