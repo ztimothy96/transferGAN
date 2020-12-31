@@ -32,7 +32,6 @@ class Trainer():
             self.D.cuda()
 
     def _critic_train_iteration(self, data):
-        """ """
         # Get generated data
         batch_size = data.size()[0]
         generated_data = self.sample_generator(batch_size)
@@ -59,7 +58,6 @@ class Trainer():
         self.losses['D'].append(d_loss.item())
 
     def _generator_train_iteration(self, data):
-        """ """
         self.G_opt.zero_grad()
 
         # Get generated data
@@ -184,3 +182,48 @@ class Trainer():
         plt.tight_layout()
         fig.savefig('{}losses.jpg'.format(samples_dir))
 
+
+# Maybe should have added more options directly to Trainer
+# But subclasses are easy to maintain so I'll put it here for now
+class EWCTrainer(Trainer):
+    def __init__(self, generator, discriminator, gen_optimizer, dis_optimizer,
+                 gp_weight=10, critic_iterations=5,
+                 print_every=50, save_every=50,
+                 use_cuda=False, ewc_weight=5e8):
+        super().__init__(generator, discriminator, gen_optimizer, dis_optimizer,
+                 gp_weight, critic_iterations, print_every, save_every, use_cuda)
+        self.ewc_weight = ewc_weight
+        # clone init params and save fisher information before training
+        self.init_params = [p.clone() for p in generator.parameters()]
+        self.fisher = self.get_fisher_info()
+        
+    def get_fisher_info(self, model, n_samples=100):
+        sampled_data = self.sample_generator(n_samples)
+        log_prob = self.D(sampled_data)
+        loss_grads = grad(log_prob, model.parameters())
+        return torch.var(loss_grads, dim=1) for loss in loss_grads]
+
+    def _ewc_loss(self, params):
+        assert len(params) == len(self.init_params)
+        assert len(params) == len(self.fisher)
+        loss = 0
+        for i in range(len(params)):
+            loss += torch.sum(self.fisher[i] * (params[i] - self.init_params[i])**2)
+        return self.ewc_weight * loss
+
+    def _generator_train_iteration(self, data):
+        self.G_opt.zero_grad()
+
+        # Get generated data
+        batch_size = data.size()[0]
+        generated_data = self.sample_generator(batch_size)
+
+        # Calculate loss and optimize
+        d_generated = self.D(generated_data)
+        ewc_loss = self._ewc_loss(self.G.parameters())
+        g_loss = -d_generated.mean() + ewc_loss
+        g_loss.backward()
+        self.G_opt.step()
+
+        # Record loss
+        self.losses['G'].append(g_loss.item())
