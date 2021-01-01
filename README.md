@@ -1,9 +1,11 @@
 # TransferGAN
 
-This repo holds a Pytorch adaptation of [Transferring GANs: generating images from limited data](https://arxiv.org/abs/1805.01677) (EECV 2018), still in progress. I may try some additional experiments after replicating the original results...
+This repo holds a Pytorch adaptation of [Transferring GANs: generating images from limited data](https://arxiv.org/abs/1805.01677) (EECV 2018). Also supports training with EWC loss, as described in [Few-shot Image Generation with Elastic Weight Consolidation](https://arxiv.org/abs/2012.02780). May add more experiments later.
+
 
 ## Training
 Here are samples from 10000 iterations of fine-tuning from ImageNet to LSUN Bedrooms.
+
 ![10000_iters](https://github.com/ztimothy96/transferGAN/blob/main/training_10000_iters.gif)
 
 ## Dependencies
