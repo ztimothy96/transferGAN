@@ -195,23 +195,25 @@ class EWCTrainer(Trainer):
         # clone init params and save fisher information before training
         self.init_params = [p.clone() for p in generator.parameters()]
 
-        def get_fisher_info(n_samples=100):
-            sampled_data = self.sample_generator(n_samples)
-            log_prob = self.D(sampled_data) #size 100, as expected
-            loss_grads = torch_grad(outputs=log_prob, inputs=list(generator.parameters()),
-                               grad_outputs=torch.ones(log_prob.size()).cuda() if self.use_cuda else torch.ones(
-                               log_prob.size()),
-                               create_graph=True, retain_graph=True)
-            print(len(loss_grads))
-            print(l.shape for l in loss_grads)
-            return [torch.var(loss, dim=0) for loss in loss_grads]
-            # check dimension problems... 
+        def get_fisher_info(n_samples=30):
+            n_params = len(list(generator.parameters()))
+            #looping so we don't run out of CUDA memory
+            sums = [torch.zeros(p.shape).cuda() if self.use_cuda
+                    else torch.zeros(p.shape) for p in generator.parameters()]
+            
+            for i in range(n_samples):
+                sampled_data = self.sample_generator(1)
+                log_probs = self.D(sampled_data)
+                loss_grads = torch_grad(outputs=log_probs,
+                                        inputs=list(generator.parameters()))
+                for j in range(n_params):
+                    sums[j] = sums[j] + loss_grads[j]**2
 
+            return [s / n_samples for s in sums]
+            
         self.fisher = get_fisher_info()
 
     def _ewc_loss(self, params):
-        assert len(list(params)) == len(self.init_params)
-        assert len(list(params)) == len(self.fisher)
         loss = 0
         for i in range(len(params)):
             loss += torch.sum(self.fisher[i] * (params[i] - self.init_params[i])**2)
@@ -226,7 +228,7 @@ class EWCTrainer(Trainer):
 
         # Calculate loss and optimize
         d_generated = self.D(generated_data)
-        ewc_loss = self._ewc_loss(self.G.parameters())
+        ewc_loss = self._ewc_loss(list(self.G.parameters()))
         g_loss = -d_generated.mean() + ewc_loss
         g_loss.backward()
         self.G_opt.step()
