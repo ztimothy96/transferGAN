@@ -45,11 +45,11 @@ parser.add_argument('--bn_d', type=bool, default=True,
 parser.add_argument('--mode', type=str, default='',
                     help='Set to "ewc" to use ewc loss')
 parser.add_argument('--iter_start', type=int, default=0,
-                    help='Iteration from which to resume training')
+                    help='Number of iterations previously trained')
 parser.add_argument('--n_examples', type=int, default=1000,
                     help='Number of training examples to use')
 parser.add_argument('--n_iters', type=int, default=25000,
-                    help='Number of iterations to train for')
+                    help='Number of additional iterations to train')
 parser.add_argument('--critic_iters', type=int, default=5,
                     help='Number of critic training steps per generator step')
 parser.add_argument('--gp_weight', type=float, default=10,
@@ -120,8 +120,8 @@ else:
                           print_every=args.print_every, save_every=args.save_every,
                           use_cuda=torch.cuda.is_available())
 
-trainer.train(data_iter, args.n_iters,
-              n_samples=args.n_samples, save_training_gif=True,
+trainer.train(data_iter, args.n_iters, n_samples=args.n_samples,
+              iter_start=args.iter_start, save_training_gif=True,
               save_weights_dir=args.save_dir, samples_dir=args.samples_dir)
 
 end = time.time()

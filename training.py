@@ -20,7 +20,6 @@ class Trainer():
         self.D = discriminator
         self.D_opt = dis_optimizer
         self.losses = {'G': [], 'D': [], 'GP': [], 'gradient_norm': []}
-        self.num_steps = 0
         self.use_cuda = use_cuda
         self.gp_weight = gp_weight
         self.critic_iterations = critic_iterations
@@ -104,47 +103,53 @@ class Trainer():
 
     def _train_iter(self, data_iter, i):
         data = data_iter.next()
-        self.num_steps += 1
         # each iteration trains generator once and critic [critic_iterations] many times
         for _ in range(self.critic_iterations):
             self._critic_train_iteration(data)
         self._generator_train_iteration(data)
 
-        if i % self.print_every == 0:
-            print("Iteration {}".format(i))
+        if i+1 % self.print_every == 0:
+            print("Iteration {}".format(i+1))
             print("D: {}".format(self.losses['D'][-1]))
             print("GP: {}".format(self.losses['GP'][-1]))
             print("Gradient norm: {}".format(self.losses['gradient_norm'][-1]))
             print("G: {}".format(self.losses['G'][-1]))
 
-    def train(self, data_iter, n_iters, n_samples=64,
+    def train(self, data_iter, n_iters, n_samples=64, iter_start=0,
               save_training_gif=True, save_weights_dir='./', samples_dir='./'):
+
+        fixed_latents = Variable(self.G.sample_latent(n_samples))
+        if self.use_cuda:
+            fixed_latents = fixed_latents.cuda()
+            
+        def make_sample_grid():
+            samples = self.G(n_samples, noise=fixed_latents)
+            samples = (samples+1.0)*(255/2.0)
+            img_grid = make_grid(samples.cpu().data)
+            # transpose axes to fit imageio convention
+            # i.e. (width, height, channels)
+            img_grid = np.transpose(img_grid.numpy(), (1, 2, 0))
+            return img_grid
+        
         if save_training_gif:
-            fixed_latents = Variable(self.G.sample_latent(n_samples))
-            if self.use_cuda:
-                fixed_latents = fixed_latents.cuda()
-            training_progress_images = []
+            training_progress_images = [make_sample_grid()]
 
-        for i in range(n_iters):
+        for i in range(iter_start, iter_start + n_iters):
             self._train_iter(data_iter, i)
-
-            if i % self.save_every == 0:
-                save_path_g = '{}{}_iter_{}.pt'.format(save_weights_dir, self.G.name, i)
-                save_path_d = '{}{}_iter_{}.pt'.format(save_weights_dir, self.D.name, i)
+            if (i+1) % self.save_every == 0:
+                print('saving!')
+                save_path_g = '{}{}_iter_{}.pt'.format(save_weights_dir, self.G.name, i+1)
+                save_path_d = '{}{}_iter_{}.pt'.format(save_weights_dir, self.D.name, i+1)
+                # delete previous G checkpoint here
                 torch.save(self.G.state_dict(), save_path_g)
+                # delete previous D checkpoint here
                 torch.save(self.D.state_dict(), save_path_d)
 
                 if save_training_gif:
-                    samples = self.G(n_samples, noise=fixed_latents)
-                    samples = (samples+1.0)*(255/2.0)
-                    img_grid = make_grid(samples.cpu().data)
-                    # transpose axes to fit imageio convention
-                    # i.e. (width, height, channels)
-                    img_grid = np.transpose(img_grid.numpy(), (1, 2, 0))
-                    training_progress_images.append(img_grid)
+                    training_progress_images.append(make_sample_grid())
                 
         if save_training_gif:
-            samples_path = '{}training_{}_iters.gif'.format(samples_dir, n_iters)
+            samples_path = '{}training_{}_iters.gif'.format(samples_dir, iter_start + n_iters)
             imageio.mimsave(samples_path, training_progress_images)
 
         self.plot_losses(samples_dir)
@@ -155,11 +160,6 @@ class Trainer():
             latent_samples = latent_samples.cuda()
         generated_data = self.G(n_samples, noise=latent_samples)
         return generated_data
-
-    def sample(self, n_samples):
-        generated_data = self.sample_generator(n_samples)
-        # Remove color channel
-        return generated_data.data.cpu().numpy()[:, 0, :, :]
 
     def plot_losses(self, samples_dir):
         n_iters = len(self.losses['G'])
