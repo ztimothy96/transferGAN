@@ -4,6 +4,7 @@
 import imageio
 import numpy as np
 import torch
+import os
 import torch.nn as nn
 import matplotlib.pyplot as plt
 from torchvision.utils import make_grid
@@ -140,10 +141,14 @@ class Trainer():
                 print('saving!')
                 save_path_g = '{}{}_iter_{}.pt'.format(save_weights_dir, self.G.name, i+1)
                 save_path_d = '{}{}_iter_{}.pt'.format(save_weights_dir, self.D.name, i+1)
-                # delete previous G checkpoint here
                 torch.save(self.G.state_dict(), save_path_g)
-                # delete previous D checkpoint here
                 torch.save(self.D.state_dict(), save_path_d)
+                
+                # delete previous checkpoints to save space on cluster
+                for file in os.listdir(save_weights_dir):
+                    path = save_weights_dir + file
+                    if file.endswith('.pt') and path not in [save_path_g, save_path_d]:
+                        os.remove(path)
 
                 if save_training_gif:
                     training_progress_images.append(make_sample_grid())
