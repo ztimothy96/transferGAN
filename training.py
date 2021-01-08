@@ -217,7 +217,7 @@ class EWCTrainer(Trainer):
             return [s / n_samples for s in sums]
             
         self.fisher = get_fisher_info()
-        for p in generator.parameters():
+        for p in self.init_params:
             p.detach()
 
     def _ewc_loss(self, params):
