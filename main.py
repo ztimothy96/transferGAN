@@ -9,12 +9,15 @@ from loader import FlatFolderDataset, InfiniteSamplerWrapper
 from training import Trainer, EWCTrainer
 from torch.utils.data import DataLoader
 
+# for reproducibility
+torch.manual_seed(0)
+np.random.seed(42)
 
 # parsing based on https://github.com/naoto0804/pytorch-AdaIN/blob/master/train.py
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', type=str,
                     default='../../../data/tzhou28/bedroom00/',
-                    #default='./data0/lsun/bedroom/0/0/',
+                    # default='./data0/lsun/bedroom/0/0/',
                     help='Directory path to training images')
 parser.add_argument('--pretrained_dir_g',
                     default='./pretrained_torch/unconditional/imagenet/generator_imagenet.pt',
@@ -48,7 +51,7 @@ parser.add_argument('--iter_start', type=int, default=0,
                     help='Number of iterations previously trained')
 parser.add_argument('--n_examples', type=int, default=1000,
                     help='Number of training examples to use')
-parser.add_argument('--n_iters', type=int, default=25000,
+parser.add_argument('--n_iters', type=int, default=10000,
                     help='Number of additional iterations to train')
 parser.add_argument('--critic_iters', type=int, default=5,
                     help='Number of critic training steps per generator step')

@@ -201,7 +201,7 @@ class EWCTrainer(Trainer):
         self.init_params = [p.clone() for p in generator.parameters()]
 
         def get_fisher_info(n_samples=30):
-            n_params = len(list(generator.parameters()))
+            n_params = len(self.init_params)
             #looping so we don't run out of CUDA memory
             sums = [torch.zeros(p.shape).cuda() if self.use_cuda
                     else torch.zeros(p.shape) for p in generator.parameters()]
@@ -217,6 +217,8 @@ class EWCTrainer(Trainer):
             return [s / n_samples for s in sums]
             
         self.fisher = get_fisher_info()
+        for p in generator.parameters():
+            p.detach()
 
     def _ewc_loss(self, params):
         loss = 0
