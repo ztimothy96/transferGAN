@@ -31,7 +31,7 @@ parser.add_argument('--samples_dir', type=str, default='./samples/',
                     help='Directory to save sample images')
 
 # model parameters
-# these are fixed, unless you want to train from scrattch...
+# these are fixed, unless you want to train from scratch...
 parser.add_argument('--n_pixels', type=int, default=64,
                     help='Height and width of image')
 parser.add_argument('--batch_size', type=int, default=16)
