@@ -24,12 +24,16 @@ parser.add_argument('--model_dir', type=str, default='../../tzhou_shared/results
                     help='Path to the pytorch generator weights')
 parser.add_argument('--n_samples', type=int, default=1000,
                     help='Number of sample images to generate')
-parser.add_argument('--gen_save_dir', default='./gen_images/',
+parser.add_argument('--gen_save_dir', default='./gen_dataset/',
                     help='Directory to save the generated images')
-parser.add_argument('--real_save_dir', default='./real_images/',
-                    help='Directory to save the generated images')
+parser.add_argument('--real_save_dir', default='./real_dataset/',
+                    help='Directory to save the real images')
 parser.add_argument('--file_type', default='.jpg',
                     help='Directory to save the generated images')
+parser.add_argument('--make_gen_data', type=bool, default=True,
+                    help='Whether to resample the generated dataset')
+parser.add_argument('--make_real_data', type=bool, default=True,
+                    help='Whether to resample the real dataset')
 
 # model parameters
 parser.add_argument('--n_pixels', type=int, default=64,
@@ -71,9 +75,11 @@ def make_real_dataset():
         img = np.transpose(samples.numpy()[0], (1, 2, 0))
         imageio.imwrite('{}{}{}'.format(args.real_save_dir, i+1, args.file_type), img)
     
+if args.make_gen_data:
+    make_generated_dataset()
+if args.make_real_data:
+    make_real_dataset()
 
-make_real_dataset()
-make_generated_dataset()
 
 
 
