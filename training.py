@@ -197,8 +197,7 @@ class EWCTrainer(Trainer):
         super().__init__(generator, discriminator, gen_optimizer, dis_optimizer,
                  gp_weight, critic_iterations, print_every, save_every, use_cuda)
         self.ewc_weight = ewc_weight
-        # clone init params and save fisher information before training
-        self.init_params = [p.clone() for p in generator.parameters()]
+        self.init_params = [p.data for p in generator.parameters()]
 
         def get_fisher_info(n_samples=30):
             n_params = len(self.init_params)
@@ -217,12 +216,13 @@ class EWCTrainer(Trainer):
             return [s / n_samples for s in sums]
             
         self.fisher = get_fisher_info()
-        for p in self.init_params:
-            p.detach()
+        
 
-    def _ewc_loss(self, params):
+    def _ewc_loss(self):
         loss = 0
-        for i in range(len(params)):
+        n_params = len(self.init_params)
+        params = list(self.G.parameters())
+        for i in range(n_params):
             loss += torch.sum(self.fisher[i] * (params[i] - self.init_params[i])**2)
         return self.ewc_weight * loss
 
@@ -235,7 +235,7 @@ class EWCTrainer(Trainer):
 
         # Calculate loss and optimize
         d_generated = self.D(generated_data)
-        ewc_loss = self._ewc_loss(list(self.G.parameters()))
+        ewc_loss = self._ewc_loss()
         g_loss = -d_generated.mean() + ewc_loss
         g_loss.backward()
         self.G_opt.step()
