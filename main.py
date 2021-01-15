@@ -65,7 +65,7 @@ parser.add_argument('--beta1_g', type=float, default=0.0,
                     help='Exponential decay rate for generator 1st moment estimates')
 parser.add_argument('--beta1_d', type=float, default=0.0,
                     help='Exponential decay rate for discriminator 1st moment estimates')
-parser.add_argument('--ewc_weight', type=float, default=5e8,
+parser.add_argument('--ewc_weight', type=float, default=5e4,
                     help='Regularization weight for EWC loss')
 parser.add_argument('--n_gpus', type=int, default=torch.cuda.device_count(),
                     help='Number of GPUs available')

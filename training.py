@@ -197,7 +197,8 @@ class EWCTrainer(Trainer):
         super().__init__(generator, discriminator, gen_optimizer, dis_optimizer,
                  gp_weight, critic_iterations, print_every, save_every, use_cuda)
         self.ewc_weight = ewc_weight
-        self.init_params = [p.data for p in generator.parameters()]
+        self.init_params = [p.clone().detach() for p in generator.parameters()]
+        self.losses['EWC'] = []
 
         def get_fisher_info(n_samples=30):
             n_params = len(self.init_params)
@@ -226,6 +227,15 @@ class EWCTrainer(Trainer):
             loss += torch.sum(self.fisher[i] * (params[i] - self.init_params[i])**2)
         return self.ewc_weight * loss
 
+    # for debugging
+    def _l2_loss(self):
+        loss = 0
+        n_params = len(self.init_params)
+        params = list(self.G.parameters())
+        for i in range(n_params):
+            loss += torch.sum(params[i]**2)
+        return loss
+
     def _generator_train_iteration(self, data):
         self.G_opt.zero_grad()
 
@@ -236,9 +246,31 @@ class EWCTrainer(Trainer):
         # Calculate loss and optimize
         d_generated = self.D(generated_data)
         ewc_loss = self._ewc_loss()
+        # ewc_loss = self._l2_loss()
+        self.losses['EWC'].append(ewc_loss.item())
         g_loss = -d_generated.mean() + ewc_loss
         g_loss.backward()
         self.G_opt.step()
 
         # Record loss
         self.losses['G'].append(g_loss.item())
+
+    def plot_losses(self, samples_dir):
+        n_iters = len(self.losses['G'])
+        x = np.arange(0, n_iters)
+        fig, axes = plt.subplots(2, 2)
+        ((ax_G, ax_D), (ax_GP, ax_EWC)) = axes
+        ax_G.plot(x, np.array(self.losses['G']))
+        ax_G.set_title('Generator loss')
+        ax_D.plot(x, np.array(self.losses['D'])[
+            self.critic_iterations-1 : self.critic_iterations*n_iters : self.critic_iterations])
+        ax_D.set_title('Discriminator loss')
+        ax_GP.plot(x, np.array(self.losses['GP'])[
+            self.critic_iterations-1 : self.critic_iterations*n_iters : self.critic_iterations])
+        ax_GP.set_title('Gradient penalty')
+        ax_EWC.plot(x, np.array(self.losses['EWC']))
+        ax_EWC.set_title('EWC loss')
+        for ax in axes.flat:
+            ax.set(xlabel='Iterations', ylabel='Loss')
+        plt.tight_layout()
+        fig.savefig('{}losses.jpg'.format(samples_dir))
