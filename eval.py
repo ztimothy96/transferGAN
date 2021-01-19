@@ -50,13 +50,13 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 def make_generated_dataset():
     generator = Generator(args.dim, args.latent_dim, args.n_pixels, args.bn_g)
     generator.load_state_dict(torch.load(args.model_dir, map_location=device))
-    generator.eval()
+    # generator.eval()
 
     with torch.no_grad():
         for i in range(args.n_samples):
             samples = generator(1)
             samples = (samples+1.0)*(255/2.0)
-            img = np.transpose(samples.numpy()[0], (1, 2, 0))
+            img = np.transpose(samples.numpy()[0], (1, 2, 0)).astype('uint8')
             imageio.imwrite('{}{}{}'.format(args.gen_save_dir, i+1, args.file_type), img)
 
 def make_real_dataset():

@@ -129,7 +129,7 @@ class Trainer():
             img_grid = make_grid(samples.cpu().data)
             # transpose axes to fit imageio convention
             # i.e. (width, height, channels)
-            img_grid = np.transpose(img_grid.numpy(), (1, 2, 0))
+            img_grid = np.transpose(img_grid.numpy(), (1, 2, 0)).astype('uint8')
             return img_grid
         
         if save_training_gif:
@@ -274,3 +274,4 @@ class EWCTrainer(Trainer):
             ax.set(xlabel='Iterations', ylabel='Loss')
         plt.tight_layout()
         fig.savefig('{}losses.jpg'.format(samples_dir))
+

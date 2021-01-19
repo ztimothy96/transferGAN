@@ -6,7 +6,7 @@ import torch.optim as optim
 import time
 from torchvision import transforms, utils
 from loader import FlatFolderDataset, InfiniteSamplerWrapper
-from training import Trainer, EWCTrainer
+from training import *
 from torch.utils.data import DataLoader
 
 # for reproducibility
@@ -47,11 +47,13 @@ parser.add_argument('--bn_d', type=bool, default=True,
 #training parameters
 parser.add_argument('--mode', type=str, default='',
                     help='Set to "ewc" to use ewc loss')
+parser.add_argument('--freeze', type=str, default='',
+                    help='Set to "batch" to freeze everything except batchnorm')
 parser.add_argument('--iter_start', type=int, default=0,
                     help='Number of iterations previously trained')
 parser.add_argument('--n_examples', type=int, default=1000,
                     help='Number of training examples to use')
-parser.add_argument('--n_iters', type=int, default=10000,
+parser.add_argument('--n_iters', type=int, default=0000,
                     help='Number of additional iterations to train')
 parser.add_argument('--critic_iters', type=int, default=5,
                     help='Number of critic training steps per generator step')
@@ -101,6 +103,10 @@ generator = Generator(args.dim, args.latent_dim, args.n_pixels, args.bn_g)
 discriminator = Discriminator(args.dim, args.n_pixels, args.bn_d)
 generator.load_state_dict(torch.load(args.pretrained_dir_g))
 discriminator.load_state_dict(torch.load(args.pretrained_dir_d))
+if args.freeze=='batch':
+        for name, param in generator.named_parameters():
+                if not ('BN' in name or 'OutputN' in name):
+                        param.requires_grad = False
 
 # set up optimizers
 G_optimizer = optim.Adam(generator.parameters(),
