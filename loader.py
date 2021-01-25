@@ -17,7 +17,7 @@ class FlatFolderDataset(Dataset):
         self.paths= []
         for path, dirs, files in os.walk(root):
             for name in files:
-                if name.endswith('.jpg'):
+                if name.endswith(('.jpg', '.png')):
                     self.paths.append(os.path.join(path, name))
                     
         if n_examples:

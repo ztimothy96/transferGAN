@@ -101,8 +101,10 @@ data_iter = iter(DataLoader(
 # load model and weights
 generator = Generator(args.dim, args.latent_dim, args.n_pixels, args.bn_g)
 discriminator = Discriminator(args.dim, args.n_pixels, args.bn_d)
-generator.load_state_dict(torch.load(args.pretrained_dir_g))
-discriminator.load_state_dict(torch.load(args.pretrained_dir_d))
+if args.pretrained_dir_g != '':
+        generator.load_state_dict(torch.load(args.pretrained_dir_g))
+if args.pretrained_dir_d != '':
+        discriminator.load_state_dict(torch.load(args.pretrained_dir_d))
 if args.freeze=='batch':
         for name, param in generator.named_parameters():
                 if not ('BN' in name or 'OutputN' in name):
